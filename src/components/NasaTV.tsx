@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // UPDATE THIS with the live stream video ID from youtube.com/@NASA
-const YOUTUBE_VIDEO_ID = "Tf_UjBMIzNo";
+const YOUTUBE_VIDEO_ID: string = "Tf_UjBMIzNo";
 
 export default function NasaTV() {
   const [isPlaying, setIsPlaying] = useState(false);
