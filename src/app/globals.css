@@ -88,6 +88,62 @@
   --topbar-height: 56px;
 }
 
+/* ============================================================
+   Light Theme — independently designed, not inverted
+   Clean, paper-like surfaces with NASA blue accent
+   ============================================================ */
+[data-theme="light"] {
+  /* === Backgrounds === */
+  --bg-base: #f5f5f7;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f0f0f2;
+  --bg-overlay: #e8e8ec;
+  --bg-input: #f5f5f7;
+
+  /* === Glass System === */
+  --glass-bg: hsla(0, 0%, 100%, 0.85);
+  --glass-border: hsla(220, 10%, 0%, 0.08);
+  --glass-blur: 16px;
+
+  /* === Foreground === */
+  --text-primary: #1a1a2e;
+  --text-secondary: #555568;
+  --text-tertiary: #8888a0;
+  --text-muted: #b0b0c0;
+
+  /* === Accent — Deep Navy/Amber for light === */
+  --accent: hsl(38, 85%, 42%);
+  --accent-hover: hsl(38, 85%, 35%);
+  --accent-subtle: hsla(38, 85%, 42%, 0.08);
+  --accent-border: hsla(38, 85%, 42%, 0.2);
+  --accent-glow-sm: 0 0 8px hsla(38, 85%, 42%, 0.15);
+  --accent-glow-md: 0 0 16px hsla(38, 85%, 42%, 0.1);
+  --accent-glow-lg: 0 0 32px hsla(38, 85%, 42%, 0.08);
+
+  /* === Semantic === */
+  --success: #16a34a;
+  --success-subtle: hsla(142, 71%, 35%, 0.08);
+  --warning: #d97706;
+  --warning-subtle: hsla(38, 92%, 44%, 0.08);
+  --error: #dc2626;
+  --error-subtle: hsla(0, 72%, 50%, 0.08);
+  --info: #2563eb;
+  --info-subtle: hsla(217, 91%, 53%, 0.08);
+
+  /* === Mission-specific === */
+  --color-nominal: #16a34a;
+  --color-caution: #d97706;
+  --color-critical: #dc2626;
+  --color-standby: #9ca3af;
+  --color-trajectory: #2563eb;
+  --color-lunar: #7c3aed;
+
+  /* === Shadows — light theme uses real elevation === */
+  --shadow-card: 0 1px 3px hsla(220, 20%, 0%, 0.06), 0 0 0 1px var(--glass-border);
+  --shadow-kpi: 0 2px 12px hsla(220, 20%, 0%, 0.08), 0 0 0 1px var(--glass-border);
+  --shadow-glow-accent: 0 0 20px hsla(38, 85%, 42%, 0.08);
+}
+
 @theme inline {
   --color-background: var(--bg-base);
   --color-foreground: var(--text-primary);
@@ -260,6 +316,29 @@ body {
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
+}
+
+[data-theme="light"] .starfield {
+  display: none;
+}
+
+[data-theme="light"] .gauge-track {
+  stroke: var(--bg-overlay);
+}
+
+[data-theme="light"] .kpi-card {
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-kpi);
+}
+
+[data-theme="light"] .section-card {
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .glass-panel {
+  background: var(--glass-bg);
+  box-shadow: 0 1px 2px hsla(220, 20%, 0%, 0.04);
 }
 
 /* === Star Field Background === */

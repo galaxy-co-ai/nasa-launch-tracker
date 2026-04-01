@@ -6,7 +6,7 @@ import { useState } from "react";
 const YOUTUBE_VIDEO_ID: string = "Tf_UjBMIzNo";
 
 export default function NasaTV() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true); // autoplay on load
   const hasValidId = YOUTUBE_VIDEO_ID !== "FILL_LIVE_ID";
 
   return (

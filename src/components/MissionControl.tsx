@@ -40,6 +40,20 @@ function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
 
+const KM_TO_MI = 0.621371;
+function convertVelocity(kmh: number, toMph: boolean): number {
+  return toMph ? Math.round(kmh * KM_TO_MI) : kmh;
+}
+function convertDistance(km: number, toMi: boolean): number {
+  return toMi ? Math.round(km * KM_TO_MI) : km;
+}
+function velUnit(mph: boolean): string {
+  return mph ? "mph" : "km/h";
+}
+function distUnit(mph: boolean): string {
+  return mph ? "mi" : "km";
+}
+
 // ─── Speedometer Gauge SVG ─────────────────────────────────
 function SpeedometerGauge({
   value,
@@ -663,6 +677,8 @@ export default function MissionControl() {
   const [now, setNow] = useState(() => new Date());
   const [showStream, setShowStream] = useState(false);
   const [centerTab, setCenterTab] = useState<"trajectory" | "stream" | "eyes">("trajectory");
+  const [useMph, setUseMph] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [telemetryHistory, setTelemetryHistory] = useState<number[][]>(
     Array.from({ length: 4 }, () => []),
   );
@@ -672,6 +688,13 @@ export default function MissionControl() {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Theme toggle
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.body.style.background = theme === "light" ? "#f5f5f7" : "#06080c";
+    document.body.style.color = theme === "light" ? "#1a1a2e" : "#f0f0f2";
+  }, [theme]);
 
   const msToLaunch = MISSION.launchDate.getTime() - now.getTime();
   const secondsSinceLaunch = -msToLaunch / 1000;
@@ -735,6 +758,19 @@ export default function MissionControl() {
       return point;
     });
   }, [simulated, horizonsData]);
+
+  // Apply unit conversion
+  const displayTelemetry = useMemo(() => {
+    return telemetry.map((point) => {
+      if (point.label === "Velocity") {
+        return { ...point, value: convertVelocity(point.value, useMph), unit: velUnit(useMph) };
+      }
+      if (point.label === "Earth Distance" || point.label === "Moon Distance") {
+        return { ...point, value: convertDistance(point.value, useMph), unit: distUnit(useMph) };
+      }
+      return point;
+    });
+  }, [telemetry, useMph]);
 
   // History accumulation (every 2 seconds)
   useEffect(() => {
@@ -931,26 +967,31 @@ export default function MissionControl() {
           </span>
         </div>
 
-        {/* Right — Stream toggle + UTC */}
-        <div className="flex items-center gap-3">
+        {/* Right — Toggles + UTC */}
+        <div className="flex items-center gap-2">
+          {/* Unit toggle */}
           <button
-            onClick={() => setShowStream(!showStream)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all cursor-pointer"
+            onClick={() => setUseMph(!useMph)}
+            className="text-[10px] data-value px-2 py-1 rounded-md transition-all cursor-pointer"
             style={{
-              background: showStream ? "var(--error-subtle)" : "var(--bg-elevated)",
-              color: showStream ? "var(--error)" : "var(--text-secondary)",
-              border: `1px solid ${showStream ? "var(--error)" : "var(--glass-border)"}`,
+              background: "var(--bg-elevated)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--glass-border)",
             }}
           >
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{
-                background: showStream ? "var(--error)" : "var(--text-muted)",
-                boxShadow: showStream ? "0 0 6px var(--error)" : "none",
-                animation: showStream ? "pulse-glow-critical 2s ease-in-out infinite" : "none",
-              }}
-            />
-            LIVE
+            {useMph ? "MPH" : "KM/H"}
+          </button>
+          {/* Theme toggle */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="text-[10px] w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--glass-border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            {theme === "dark" ? "☀" : "☾"}
           </button>
           <span className="data-value text-xs hidden sm:block" style={{ color: "var(--text-secondary)" }}>
             UTC {now.toISOString().slice(11, 19)}
@@ -977,7 +1018,7 @@ export default function MissionControl() {
         <div className="hidden md:block w-px h-8" style={{ background: "var(--glass-border)" }} />
 
         {/* Inline metrics */}
-        {telemetry.map((point) => (
+        {displayTelemetry.map((point) => (
           <div key={point.label} className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
               {point.label === "Earth Distance" ? "⊕" : point.label === "Moon Distance" ? "☽" : point.label === "Acceleration" ? "G" : point.label.slice(0, 3).toUpperCase()}
@@ -992,12 +1033,7 @@ export default function MissionControl() {
         ))}
       </div>
 
-      {/* ─── Stream Panel (toggled) ──────────────────── */}
-      {showStream && (
-        <div className="p-4 md:p-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
-          <NasaTV />
-        </div>
-      )}
+
 
       {/* ─── Main 3-Column Layout ────────────────────── */}
       <main className="flex-1 p-4 md:p-6 max-w-[1600px] mx-auto w-full">
@@ -1058,7 +1094,7 @@ export default function MissionControl() {
                 {horizonsData.available ? "JPL LIVE" : "SIMULATED"}
               </span>
             </div>
-            {telemetry.map((point, i) => (
+            {displayTelemetry.map((point, i) => (
               <TelemetryCard
                 key={point.label}
                 point={point}
