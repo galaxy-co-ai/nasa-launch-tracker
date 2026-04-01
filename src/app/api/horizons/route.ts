@@ -74,6 +74,7 @@ export async function GET() {
       vz: number;
       distance: number;
       velocity: number;
+      moonDistance: number;
     }[] = [];
 
     for (let i = 0; i < vectorLines.length; i += 4) {
@@ -110,8 +111,9 @@ export async function GET() {
 
         const distance = Math.sqrt(x * x + y * y + z * z); // km from Earth center
         const velocity = Math.sqrt(vx * vx + vy * vy + vz * vz) * 3600; // km/s → km/h
+        const moonDistance = 384400 - distance; // approximate (assumes Earth-Moon line)
 
-        vectors.push({ timestamp, x, y, z, vx, vy, vz, distance, velocity });
+        vectors.push({ timestamp, x, y, z, vx, vy, vz, distance, velocity, moonDistance: Math.max(0, moonDistance) });
       }
     }
 

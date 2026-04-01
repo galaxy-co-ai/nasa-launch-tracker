@@ -678,11 +678,63 @@ export default function MissionControl() {
   const isLaunched = msToLaunch <= 0;
   const countdown = formatCountdown(msToLaunch);
 
-  // Telemetry
-  const telemetry = useMemo(
+  // Horizons real data
+  const [horizonsData, setHorizonsData] = useState<{
+    available: boolean;
+    velocity?: number;
+    distance?: number;
+    moonDistance?: number;
+  }>({ available: false });
+
+  useEffect(() => {
+    if (!isLaunched) return;
+    let mounted = true;
+
+    async function fetchHorizons() {
+      try {
+        const res = await fetch("/api/horizons");
+        if (res.ok && mounted) {
+          const data = await res.json();
+          if (data.available && data.latest) {
+            setHorizonsData({
+              available: true,
+              velocity: Math.round(data.latest.velocity),
+              distance: Math.round(data.latest.distance),
+              moonDistance: Math.round(data.latest.moonDistance),
+            });
+          }
+        }
+      } catch {
+        // Fall back to simulation silently
+      }
+    }
+
+    fetchHorizons();
+    const interval = setInterval(fetchHorizons, 30000); // Poll every 30s
+    return () => { mounted = false; clearInterval(interval); };
+  }, [isLaunched]);
+
+  // Telemetry — real data overrides simulation
+  const simulated = useMemo(
     () => simulateTelemetry(secondsSinceLaunch),
     [secondsSinceLaunch],
   );
+
+  const telemetry = useMemo(() => {
+    if (!horizonsData.available) return simulated;
+    return simulated.map((point) => {
+      if (point.label === "Velocity" && horizonsData.velocity != null) {
+        return { ...point, value: horizonsData.velocity };
+      }
+      if (point.label === "Earth Distance" && horizonsData.distance != null) {
+        return { ...point, value: horizonsData.distance };
+      }
+      if (point.label === "Moon Distance" && horizonsData.moonDistance != null) {
+        return { ...point, value: horizonsData.moonDistance };
+      }
+      return point;
+    });
+  }, [simulated, horizonsData]);
 
   // History accumulation (every 2 seconds)
   useEffect(() => {
@@ -994,7 +1046,18 @@ export default function MissionControl() {
 
           {/* ── Right Column: Telemetry Instruments ──── */}
           <div className="flex flex-col gap-3">
-            <SectionHeader title="Telemetry" />
+            <div className="flex items-center justify-between">
+              <SectionHeader title="Telemetry" />
+              <span
+                className="text-[9px] data-value px-2 py-0.5 rounded-full"
+                style={{
+                  background: horizonsData.available ? "var(--success-subtle)" : "var(--warning-subtle)",
+                  color: horizonsData.available ? "var(--success)" : "var(--warning)",
+                }}
+              >
+                {horizonsData.available ? "JPL LIVE" : "SIMULATED"}
+              </span>
+            </div>
             {telemetry.map((point, i) => (
               <TelemetryCard
                 key={point.label}
