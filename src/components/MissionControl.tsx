@@ -306,6 +306,54 @@ function AltitudeLadder({
   );
 }
 
+// ─── Distance Card ────────────────────────────────────────
+function DistanceCard({
+  point,
+  history,
+  color,
+  invert,
+}: {
+  point: TelemetryPoint;
+  history: number[];
+  color: string;
+  invert?: boolean; // Moon distance = bar shrinks as you approach
+}) {
+  const pct = Math.max(0, Math.min(1, (point.value - point.min) / (point.max - point.min)));
+  const displayPct = invert ? 1 - pct : pct;
+
+  return (
+    <div className="kpi-card flex flex-col gap-2">
+      <div className="flex items-center justify-between w-full">
+        <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>
+          {point.label}
+        </span>
+        <div className="status-dot" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+      </div>
+      <div className="flex items-end gap-2">
+        <span className="data-value-lg text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+          {formatNumber(point.value)}
+        </span>
+        <span className="data-value text-[10px] pb-0.5" style={{ color: "var(--text-tertiary)" }}>
+          {point.unit}
+        </span>
+      </div>
+      {/* Progress bar */}
+      <div className="w-full h-2 rounded-full" style={{ background: "var(--bg-overlay)" }}>
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${displayPct * 100}%`,
+            background: color,
+            boxShadow: `0 0 8px ${color}`,
+            transition: "width 1s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        />
+      </div>
+      <Sparkline data={history} color={color} width={200} />
+    </div>
+  );
+}
+
 // ─── Telemetry Card ───────────────────────────────────────
 function TelemetryCard({
   point,
@@ -318,21 +366,23 @@ function TelemetryCard({
     point.value >= point.nominal[0] && point.value <= point.nominal[1];
   const gaugeColor = isNominal ? "var(--color-nominal)" : "var(--color-caution)";
 
+  // Use distance card for distance metrics
+  if (point.label === "Earth Distance") {
+    return <DistanceCard point={point} history={history} color="var(--color-trajectory)" />;
+  }
+  if (point.label === "Moon Distance") {
+    return <DistanceCard point={point} history={history} color="var(--color-lunar)" invert />;
+  }
+
   return (
     <div className="kpi-card flex flex-col items-center gap-2">
       <div className="flex items-center justify-between w-full">
-        <span
-          className="text-xs uppercase tracking-wider"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>
           {point.label}
         </span>
         <div
           className="status-dot"
-          style={{
-            background: gaugeColor,
-            boxShadow: `0 0 8px ${gaugeColor}`,
-          }}
+          style={{ background: gaugeColor, boxShadow: `0 0 8px ${gaugeColor}` }}
         />
       </div>
       <SpeedometerGauge
@@ -342,20 +392,14 @@ function TelemetryCard({
         color={gaugeColor}
       />
       <div className="flex items-end gap-2">
-        <span
-          className="data-value-lg text-2xl font-bold"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <span className="data-value-lg text-xl font-bold" style={{ color: "var(--text-primary)" }}>
           {formatNumber(point.value)}
         </span>
-        <span
-          className="data-value text-xs pb-0.5"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <span className="data-value text-[10px] pb-0.5" style={{ color: "var(--text-tertiary)" }}>
           {point.unit}
         </span>
       </div>
-      <Sparkline data={history} color={gaugeColor} width={140} />
+      <Sparkline data={history} color={gaugeColor} width={200} />
     </div>
   );
 }
@@ -617,12 +661,11 @@ function StatusFeed({ events }: { events: StatusEvent[] }) {
 // ─── Main Dashboard ───────────────────────────────────────
 export default function MissionControl() {
   const [now, setNow] = useState(() => new Date());
-  const [telemetryHistory, setTelemetryHistory] = useState<number[][]>([
-    [],
-    [],
-    [],
-    [],
-  ]);
+  const [showStream, setShowStream] = useState(false);
+  const [centerTab, setCenterTab] = useState<"trajectory" | "stream" | "eyes">("trajectory");
+  const [telemetryHistory, setTelemetryHistory] = useState<number[][]>(
+    Array.from({ length: 4 }, () => []),
+  );
 
   // Update every second
   useEffect(() => {
@@ -795,7 +838,7 @@ export default function MissionControl() {
     <div className="flex flex-col min-h-screen">
       {/* ─── TopBar ─────────────────────────────────── */}
       <header
-        className="glass-panel sticky top-0 z-50 flex items-center justify-between px-6"
+        className="glass-panel sticky top-0 z-50 flex items-center justify-between px-4 md:px-6"
         style={{
           height: "var(--topbar-height)",
           borderRadius: 0,
@@ -827,128 +870,144 @@ export default function MissionControl() {
             className={`status-dot ${isLaunched ? "status-dot--nominal" : ""}`}
             style={
               !isLaunched
-                ? {
-                    background: "var(--color-caution)",
-                    boxShadow: "0 0 8px var(--color-caution)",
-                  }
+                ? { background: "var(--color-caution)", boxShadow: "0 0 8px var(--color-caution)" }
                 : undefined
             }
           />
-          <span
-            className="data-value text-xs tracking-widest"
-            style={{ color: "var(--accent)" }}
-          >
+          <span className="data-value text-xs tracking-widest" style={{ color: "var(--accent)" }}>
             {getPhaseLabel()}
           </span>
         </div>
 
-        {/* Right — UTC clock */}
-        <div className="flex items-center gap-4">
-          <span className="data-value text-xs" style={{ color: "var(--text-secondary)" }}>
+        {/* Right — Stream toggle + UTC */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowStream(!showStream)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all cursor-pointer"
+            style={{
+              background: showStream ? "var(--error-subtle)" : "var(--bg-elevated)",
+              color: showStream ? "var(--error)" : "var(--text-secondary)",
+              border: `1px solid ${showStream ? "var(--error)" : "var(--glass-border)"}`,
+            }}
+          >
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{
+                background: showStream ? "var(--error)" : "var(--text-muted)",
+                boxShadow: showStream ? "0 0 6px var(--error)" : "none",
+                animation: showStream ? "pulse-glow-critical 2s ease-in-out infinite" : "none",
+              }}
+            />
+            LIVE
+          </button>
+          <span className="data-value text-xs hidden sm:block" style={{ color: "var(--text-secondary)" }}>
             UTC {now.toISOString().slice(11, 19)}
           </span>
         </div>
       </header>
 
-      {/* ─── Main Grid ──────────────────────────────── */}
-      <main className="flex-1 p-4 md:p-6 flex flex-col gap-6 max-w-[1600px] mx-auto w-full">
-        {/* ─── Countdown Hero ───────────────────────── */}
-        <section className="flex flex-col items-center gap-2 py-6 md:py-10">
-          <span
-            className="text-xs uppercase tracking-[0.3em]"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            {isLaunched ? "Mission Elapsed Time" : "Time to Launch"}
+      {/* ─── Metric Strip — Countdown + Key Values ───── */}
+      <div
+        className="flex flex-wrap items-center justify-center gap-4 md:gap-8 px-4 py-3"
+        style={{ borderBottom: "1px solid var(--glass-border)", background: "var(--bg-surface)" }}
+      >
+        {/* Countdown */}
+        <div className="flex items-baseline gap-1">
+          <span className="data-value text-sm font-bold" style={{ color: "var(--accent)" }}>
+            {countdown.sign}
           </span>
-          <div className="flex items-baseline gap-1 md:gap-2 animate-countdown-pulse">
-            <span
-              className="data-value-lg text-4xl md:text-6xl lg:text-7xl font-bold"
-              style={{ color: "var(--accent)" }}
-            >
-              {countdown.sign}
+          <span className="data-value text-base md:text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+            {countdown.days}:{countdown.hours}:{countdown.minutes}:{countdown.seconds}
+          </span>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-8" style={{ background: "var(--glass-border)" }} />
+
+        {/* Inline metrics */}
+        {telemetry.map((point) => (
+          <div key={point.label} className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
+              {point.label === "Earth Distance" ? "⊕" : point.label === "Moon Distance" ? "☽" : point.label === "Acceleration" ? "G" : point.label.slice(0, 3).toUpperCase()}
             </span>
-            <CountdownSegment value={countdown.days} label="DAYS" />
-            <Colon />
-            <CountdownSegment value={countdown.hours} label="HRS" />
-            <Colon />
-            <CountdownSegment value={countdown.minutes} label="MIN" />
-            <Colon />
-            <CountdownSegment value={countdown.seconds} label="SEC" />
+            <span className="data-value text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+              {formatNumber(point.value)}
+            </span>
+            <span className="data-value text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+              {point.unit}
+            </span>
           </div>
-          <p
-            className="text-sm text-center max-w-lg mt-2"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            {MISSION.description}
-          </p>
-        </section>
+        ))}
+      </div>
 
-        {/* ─── Telemetry Grid ───────────────────────── */}
-        <section>
-          <SectionHeader title="Telemetry" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {telemetry.map((point, i) =>
-              point.label === "Altitude" ? (
-                <AltitudeLadder
-                  key={point.label}
-                  value={point.value}
-                  history={telemetryHistory[i]}
-                />
-              ) : (
-                <TelemetryCard
-                  key={point.label}
-                  point={point}
-                  history={telemetryHistory[i]}
-                />
-              ),
-            )}
-          </div>
-        </section>
+      {/* ─── Stream Panel (toggled) ──────────────────── */}
+      {showStream && (
+        <div className="p-4 md:p-6 max-w-[1600px] mx-auto w-full animate-fade-in-up">
+          <NasaTV />
+        </div>
+      )}
 
-        {/* ─── Two Column: Timeline + Trajectory/Feed ─ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Timeline */}
-          <div className="lg:col-span-1">
-            <SectionHeader title="Mission Timeline" />
-            <div className="section-card max-h-[600px] overflow-y-auto">
+      {/* ─── Main 3-Column Layout ────────────────────── */}
+      <main className="flex-1 p-4 md:p-6 max-w-[1600px] mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-4 md:gap-5">
+
+          {/* ── Left Column: Timeline ────────────────── */}
+          <div className="hidden lg:flex flex-col gap-2">
+            <SectionHeader title="Timeline" />
+            <div className="section-card flex-1 overflow-y-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
               {timeline.map((m, i) => (
-                <TimelineEvent
-                  key={m.id}
-                  milestone={m}
-                  isLast={i === timeline.length - 1}
-                />
+                <TimelineEvent key={m.id} milestone={m} isLast={i === timeline.length - 1} />
               ))}
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <div>
-              <SectionHeader title="Orbital Trajectory" />
-              <TrajectoryViz progress={trajectoryProgress} />
+          {/* ── Center Column: Viz + Feed ────────────── */}
+          <div className="flex flex-col gap-4">
+            {/* Tab bar */}
+            <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: "var(--bg-surface)" }}>
+              {(["trajectory", "eyes", "stream"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setCenterTab(tab)}
+                  className="flex-1 text-xs py-2 px-3 rounded-md transition-all cursor-pointer"
+                  style={{
+                    background: centerTab === tab ? "var(--bg-elevated)" : "transparent",
+                    color: centerTab === tab ? "var(--text-primary)" : "var(--text-tertiary)",
+                    border: centerTab === tab ? "1px solid var(--glass-border)" : "1px solid transparent",
+                  }}
+                >
+                  {tab === "trajectory" ? "Trajectory" : tab === "eyes" ? "3D View" : "Live Stream"}
+                </button>
+              ))}
             </div>
 
+            {/* Active panel */}
+            {centerTab === "trajectory" && <TrajectoryViz progress={trajectoryProgress} />}
+            {centerTab === "eyes" && <NasaEyes />}
+            {centerTab === "stream" && <NasaTV />}
+
+            {/* Status Feed */}
             <StatusFeed events={statusEvents} />
+          </div>
+
+          {/* ── Right Column: Telemetry Instruments ──── */}
+          <div className="flex flex-col gap-3">
+            <SectionHeader title="Telemetry" />
+            {telemetry.map((point, i) => (
+              <TelemetryCard
+                key={point.label}
+                point={point}
+                history={telemetryHistory[i]}
+              />
+            ))}
           </div>
         </div>
 
-        {/* ─── NASA Eyes 3D ──────────────────────────── */}
-        <section>
-          <SectionHeader title="3D Spacecraft Tracking" />
-          <NasaEyes />
-        </section>
-
-        {/* ─── Deep Space Network ───────────────────── */}
-        <section>
-          <SectionHeader title="Deep Space Network — Live" />
-          <DSNPanel />
-        </section>
-
-        {/* ─── NASA TV + Space Weather ──────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <SectionHeader title="NASA TV — Mission Coverage" />
-            <NasaTV />
+        {/* ─── Below fold: DSN + Weather ─────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          <div className="lg:col-span-2">
+            <SectionHeader title="Deep Space Network — Live" />
+            <DSNPanel />
           </div>
           <div>
             <SectionHeader title="Space Weather" />
@@ -956,18 +1015,17 @@ export default function MissionControl() {
           </div>
         </div>
 
-        {/* ─── Crew ─────────────────────────────────── */}
-        <section>
+        {/* ─── Crew + Stats ──────────────────────────── */}
+        <div className="mt-8">
           <SectionHeader title="Crew — Orion MPCV" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {CREW.map((member) => (
               <CrewCard key={member.name} member={member} />
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* ─── Mission Stats Bar ────────────────────── */}
-        <section className="glass-panel p-4">
+        <div className="glass-panel p-4 mt-6">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatBlock label="Vehicle" value={MISSION.vehicle} />
             <StatBlock label="Launch Vehicle" value={MISSION.rocket} />
@@ -975,14 +1033,11 @@ export default function MissionControl() {
             <StatBlock label="Trajectory" value="Free Return" />
             <StatBlock label="Launch Site" value="LC-39B, KSC" />
           </div>
-        </section>
+        </div>
       </main>
 
-      {/* ─── Footer ─────────────────────────────────── */}
-      <footer
-        className="text-center py-4"
-        style={{ borderTop: "1px solid var(--glass-border)" }}
-      >
+      {/* ─── Footer ──────────────────────────────────── */}
+      <footer className="text-center py-4" style={{ borderTop: "1px solid var(--glass-border)" }}>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           Mission Control — Artemis II — Live data from NASA DSN, JPL Horizons, DONKI
         </span>

@@ -164,13 +164,22 @@ export function getInitialTelemetry(): TelemetryPoint[] {
       icon: "speed",
     },
     {
-      label: "Altitude",
-      value: 0,
+      label: "Earth Distance",
+      value: 6371,
+      unit: "km",
+      min: 6371,
+      max: 400000,
+      nominal: [6371, 400000],
+      icon: "distance",
+    },
+    {
+      label: "Moon Distance",
+      value: 384400,
       unit: "km",
       min: 0,
-      max: 400000,
-      nominal: [0, 400000],
-      icon: "altitude",
+      max: 384400,
+      nominal: [0, 384400],
+      icon: "distance",
     },
     {
       label: "Acceleration",
@@ -181,15 +190,6 @@ export function getInitialTelemetry(): TelemetryPoint[] {
       nominal: [0, 3.5],
       icon: "acceleration",
     },
-    {
-      label: "Heart Rate (Avg)",
-      value: 72,
-      unit: "bpm",
-      min: 40,
-      max: 180,
-      nominal: [55, 120],
-      icon: "heartrate",
-    },
   ];
 }
 
@@ -198,47 +198,54 @@ export function simulateTelemetry(secondsSinceLaunch: number): TelemetryPoint[] 
   const t = secondsSinceLaunch;
   const base = getInitialTelemetry();
 
+  const MOON_DIST = 384400; // km
+  const EARTH_R = 6371; // km (Earth radius)
+
   if (t < 0) return base; // Pre-launch
 
   // Phase 1: Launch to SRB sep (0-132s)
   if (t <= 132) {
     const progress = t / 132;
-    base[0].value = Math.round(progress * 5400); // 0 → 5,400 km/h
-    base[1].value = Math.round(progress * 45); // 0 → 45 km
-    base[2].value = +(1.0 + progress * 2.5).toFixed(1); // 1G → 3.5G
-    base[3].value = Math.round(72 + progress * 30); // Elevated HR
+    const alt = progress * 45;
+    base[0].value = Math.round(progress * 5400);
+    base[1].value = Math.round(EARTH_R + alt);
+    base[2].value = Math.round(MOON_DIST - alt);
+    base[3].value = +(1.0 + progress * 2.5).toFixed(1);
   }
   // Phase 2: SRB sep to core sep (132-497s)
   else if (t <= 497) {
     const progress = (t - 132) / (497 - 132);
-    base[0].value = Math.round(5400 + progress * 22000); // 5,400 → 27,400 km/h
-    base[1].value = Math.round(45 + progress * 130); // 45 → 175 km
-    base[2].value = +(1.2 + progress * 1.5).toFixed(1);
-    base[3].value = Math.round(95 + progress * 15);
+    const alt = 45 + progress * 130;
+    base[0].value = Math.round(5400 + progress * 22000);
+    base[1].value = Math.round(EARTH_R + alt);
+    base[2].value = Math.round(MOON_DIST - alt);
+    base[3].value = +(1.2 + progress * 1.5).toFixed(1);
   }
   // Phase 3: Orbit insertion (497-1080s)
   else if (t <= 1080) {
     const progress = (t - 497) / (1080 - 497);
+    const alt = 175 + progress * 10;
     base[0].value = Math.round(27400 + progress * 600);
-    base[1].value = Math.round(175 + progress * 10); // ~185 km
-    base[2].value = +(0.0 + Math.sin(progress * Math.PI) * 0.3).toFixed(1); // Microgravity
-    base[3].value = Math.round(85 - progress * 10);
+    base[1].value = Math.round(EARTH_R + alt);
+    base[2].value = Math.round(MOON_DIST - alt);
+    base[3].value = +(0.0 + Math.sin(progress * Math.PI) * 0.3).toFixed(1);
   }
   // Phase 4: Parking orbit (1080-7020s)
   else if (t <= 7020) {
     base[0].value = 28000;
-    base[1].value = 185;
-    base[2].value = 0.0;
-    base[3].value = 72 + Math.round(Math.sin(t / 100) * 5);
+    base[1].value = Math.round(EARTH_R + 185);
+    base[2].value = Math.round(MOON_DIST - 185);
+    base[3].value = 0.0;
   }
   // Phase 5: TLI and coast (7020+)
   else {
     const coastTime = t - 7020;
     const coastProgress = Math.min(coastTime / 345600, 1); // 4 days
+    const distFromEarth = 185 + coastProgress * (MOON_DIST - 8900);
     base[0].value = Math.round(28000 + coastProgress * 11000);
-    base[1].value = Math.round(185 + coastProgress * 384215);
-    base[2].value = +(coastProgress < 0.01 ? 1.2 : 0.0).toFixed(1);
-    base[3].value = 68 + Math.round(Math.sin(t / 200) * 8);
+    base[1].value = Math.round(EARTH_R + distFromEarth);
+    base[2].value = Math.round(MOON_DIST - distFromEarth);
+    base[3].value = +(coastProgress < 0.01 ? 1.2 : 0.0).toFixed(1);
   }
 
   return base;
