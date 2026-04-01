@@ -183,6 +183,129 @@ function Sparkline({
   );
 }
 
+// ─── Altitude Ladder ──────────────────────────────────────
+const ALTITUDE_MARKERS = [
+  { km: 100, label: "Kármán Line" },
+  { km: 408, label: "ISS" },
+  { km: 20200, label: "GPS Orbit" },
+  { km: 35786, label: "Geostationary" },
+  { km: 384400, label: "Moon" },
+];
+
+function AltitudeLadder({
+  value,
+  history,
+}: {
+  value: number;
+  history: number[];
+}) {
+  // Use log scale for the huge range (0 → 400,000 km)
+  const logScale = (v: number) => {
+    if (v <= 0) return 0;
+    const maxLog = Math.log10(400000);
+    return Math.min(1, Math.log10(Math.max(v, 1)) / maxLog);
+  };
+
+  const pct = logScale(value);
+  const barHeight = 160;
+  const fillHeight = pct * barHeight;
+
+  return (
+    <div className="kpi-card flex flex-col gap-2">
+      <div className="flex items-center justify-between w-full">
+        <span
+          className="text-xs uppercase tracking-wider"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Altitude
+        </span>
+        <div
+          className="status-dot status-dot--nominal"
+        />
+      </div>
+
+      <div className="flex gap-3 items-end">
+        {/* Vertical bar + markers */}
+        <div className="relative flex-shrink-0" style={{ width: 32, height: barHeight }}>
+          {/* Track */}
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{ background: "var(--bg-overlay)" }}
+          />
+          {/* Fill */}
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-full"
+            style={{
+              height: `${fillHeight}px`,
+              background: "linear-gradient(to top, var(--color-trajectory), var(--color-lunar))",
+              boxShadow: "0 0 12px var(--color-trajectory)",
+              transition: "height 1s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
+          {/* Current position marker */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 w-8 h-1 rounded-full"
+            style={{
+              bottom: `${fillHeight - 2}px`,
+              background: "var(--text-primary)",
+              boxShadow: "0 0 8px var(--text-primary)",
+              transition: "bottom 1s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
+        </div>
+
+        {/* Reference markers */}
+        <div className="relative flex-1" style={{ height: barHeight }}>
+          {ALTITUDE_MARKERS.map((marker) => {
+            const markerPct = logScale(marker.km);
+            const bottom = markerPct * barHeight;
+            const isBelow = value >= marker.km;
+            return (
+              <div
+                key={marker.label}
+                className="absolute left-0 flex items-center gap-1.5"
+                style={{ bottom: `${bottom - 6}px` }}
+              >
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{
+                    background: isBelow ? "var(--color-trajectory)" : "var(--text-muted)",
+                  }}
+                />
+                <span
+                  className="data-value text-[9px] whitespace-nowrap"
+                  style={{
+                    color: isBelow ? "var(--text-secondary)" : "var(--text-muted)",
+                  }}
+                >
+                  {marker.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Value */}
+      <div className="flex items-end gap-2 mt-1">
+        <span
+          className="data-value-lg text-2xl font-bold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {formatNumber(value)}
+        </span>
+        <span
+          className="data-value text-xs pb-0.5"
+          style={{ color: "var(--text-tertiary)" }}
+        >
+          km
+        </span>
+      </div>
+      <Sparkline data={history} color="var(--color-trajectory)" width={140} />
+    </div>
+  );
+}
+
 // ─── Telemetry Card ───────────────────────────────────────
 function TelemetryCard({
   point,
@@ -764,13 +887,21 @@ export default function MissionControl() {
         <section>
           <SectionHeader title="Telemetry" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {telemetry.map((point, i) => (
-              <TelemetryCard
-                key={point.label}
-                point={point}
-                history={telemetryHistory[i]}
-              />
-            ))}
+            {telemetry.map((point, i) =>
+              point.label === "Altitude" ? (
+                <AltitudeLadder
+                  key={point.label}
+                  value={point.value}
+                  history={telemetryHistory[i]}
+                />
+              ) : (
+                <TelemetryCard
+                  key={point.label}
+                  point={point}
+                  history={telemetryHistory[i]}
+                />
+              ),
+            )}
           </div>
         </section>
 
