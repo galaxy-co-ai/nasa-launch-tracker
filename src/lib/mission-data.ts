@@ -32,7 +32,7 @@ export const MISSION = {
   vehicle: "Orion MPCV",
   rocket: "SLS Block 1",
   launchSite: "LC-39B, Kennedy Space Center",
-  launchDate: new Date("2026-04-01T12:30:00-04:00"), // EDT
+  launchDate: new Date("2026-04-01T22:36:00Z"), // UTC — synced to real launch
   duration: "~10 days",
   orbit: "Lunar Free-Return Trajectory",
   distance: "384,400 km to Moon",
