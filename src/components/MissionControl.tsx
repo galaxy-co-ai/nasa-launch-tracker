@@ -9,6 +9,10 @@ import {
   type TelemetryPoint,
   type MissionMilestone,
 } from "@/lib/mission-data";
+import DSNPanel from "./DSNPanel";
+import NasaTV from "./NasaTV";
+import NasaEyes from "./NasaEyes";
+import SpaceWeather from "./SpaceWeather";
 
 // ─── Helpers ──────────────────────────────────────────────
 function formatCountdown(ms: number): {
@@ -731,6 +735,30 @@ export default function MissionControl() {
           </div>
         </div>
 
+        {/* ─── NASA Eyes 3D ──────────────────────────── */}
+        <section>
+          <SectionHeader title="3D Spacecraft Tracking" />
+          <NasaEyes />
+        </section>
+
+        {/* ─── Deep Space Network ───────────────────── */}
+        <section>
+          <SectionHeader title="Deep Space Network — Live" />
+          <DSNPanel />
+        </section>
+
+        {/* ─── NASA TV + Space Weather ──────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <SectionHeader title="NASA TV — Mission Coverage" />
+            <NasaTV />
+          </div>
+          <div>
+            <SectionHeader title="Space Weather" />
+            <SpaceWeather />
+          </div>
+        </div>
+
         {/* ─── Crew ─────────────────────────────────── */}
         <section>
           <SectionHeader title="Crew — Orion MPCV" />
@@ -759,8 +787,7 @@ export default function MissionControl() {
         style={{ borderTop: "1px solid var(--glass-border)" }}
       >
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Mission Control — Artemis II Tracking Dashboard — Data simulated for
-          demonstration
+          Mission Control — Artemis II — Live data from NASA DSN, JPL Horizons, DONKI
         </span>
       </footer>
     </div>
