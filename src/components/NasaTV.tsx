@@ -1,57 +1,13 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useState } from "react";
 
-const NASA_HLS_URL =
-  "https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8";
+// UPDATE THIS with the live stream video ID from youtube.com/@NASA
+const YOUTUBE_VIDEO_ID = "FILL_LIVE_ID";
 
 export default function NasaTV() {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Only load HLS.js when user clicks play (saves bandwidth)
-    if (!isPlaying) return;
-
-    let hls: import("hls.js").default | null = null;
-
-    async function initHls() {
-      const Hls = (await import("hls.js")).default;
-
-      if (Hls.isSupported() && video) {
-        hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: true,
-        });
-        hls.loadSource(NASA_HLS_URL);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => setHasError(true));
-        });
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) setHasError(true);
-        });
-      } else if (video?.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari native HLS
-        video.src = NASA_HLS_URL;
-        video.play().catch(() => setHasError(true));
-      } else {
-        setHasError(true);
-      }
-    }
-
-    initHls();
-
-    return () => {
-      if (hls) {
-        hls.destroy();
-      }
-    };
-  }, [isPlaying]);
+  const hasValidId = YOUTUBE_VIDEO_ID !== "FILL_LIVE_ID";
 
   return (
     <div className="section-card overflow-hidden">
@@ -62,20 +18,22 @@ export default function NasaTV() {
             style={{
               background: isPlaying ? "var(--error)" : "var(--text-muted)",
               boxShadow: isPlaying ? "0 0 8px var(--error)" : "none",
-              animation: isPlaying ? "pulse-glow-critical 2s ease-in-out infinite" : "none",
+              animation: isPlaying
+                ? "pulse-glow-critical 2s ease-in-out infinite"
+                : "none",
             }}
           />
           <span
             className="text-xs font-semibold"
             style={{ color: "var(--text-primary)" }}
           >
-            NASA TV — Live
+            NASA TV — Live Mission Coverage
           </span>
         </div>
-        {!isPlaying && (
+        {!isPlaying && hasValidId && (
           <button
             onClick={() => setIsPlaying(true)}
-            className="text-xs px-3 py-1 rounded-full transition-all"
+            className="text-xs px-3 py-1 rounded-full transition-all cursor-pointer"
             style={{
               background: "var(--accent-subtle)",
               color: "var(--accent)",
@@ -87,54 +45,65 @@ export default function NasaTV() {
         )}
       </div>
 
-      {hasError && (
+      {isPlaying && hasValidId ? (
         <div
-          className="rounded-lg p-4 text-center"
-          style={{ background: "var(--bg-elevated)" }}
+          className="relative rounded-lg overflow-hidden"
+          style={{ aspectRatio: "16/9", background: "var(--bg-base)" }}
         >
-          <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            NASA TV stream unavailable — try{" "}
-            <a
-              href="https://www.nasa.gov/live/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--accent)" }}
-            >
-              nasa.gov/live
-            </a>
-          </p>
+          <iframe
+            src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&mute=1&rel=0&modestbranding=1&color=white`}
+            className="absolute inset-0 w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title="NASA TV — Artemis II Live"
+          />
         </div>
-      )}
-
-      {!isPlaying && !hasError && (
+      ) : (
         <div
-          className="rounded-lg flex items-center justify-center"
+          className="rounded-lg flex items-center justify-center cursor-pointer transition-all"
           style={{
             background: "var(--bg-elevated)",
             aspectRatio: "16/9",
+            border: "1px solid var(--glass-border)",
           }}
+          onClick={() => hasValidId && setIsPlaying(true)}
         >
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-2xl">🛰️</span>
-            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Click to stream NASA TV mission coverage
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{
+                background: "var(--error-subtle)",
+                border: "2px solid var(--error)",
+              }}
+            >
+              <span
+                className="text-lg ml-1"
+                style={{ color: "var(--error)" }}
+              >
+                ▶
+              </span>
+            </div>
+            <p
+              className="text-xs font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {hasValidId
+                ? "Click to watch Artemis II launch live"
+                : "Live stream loading — check nasa.gov/live"}
             </p>
+            <a
+              href="https://www.youtube.com/@NASA/live"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px]"
+              style={{ color: "var(--accent)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Open on YouTube ↗
+            </a>
           </div>
         </div>
       )}
-
-      <video
-        ref={videoRef}
-        className="w-full rounded-lg"
-        style={{
-          display: isPlaying && !hasError ? "block" : "none",
-          aspectRatio: "16/9",
-          background: "var(--bg-base)",
-        }}
-        controls
-        muted
-        playsInline
-      />
     </div>
   );
 }
