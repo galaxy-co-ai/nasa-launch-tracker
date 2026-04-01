@@ -1,287 +1,136 @@
 @import "tailwindcss";
 
 /* ============================================================
-   NASA Launch Tracker — Design Tokens
-   Fusion: Flashpoint glass panels + Stratum data rigor
+   Mission Control v2 — Design Tokens (Spec Section 10)
+   Dark-mode only. This is space. It's dark out there.
    ============================================================ */
 
 :root {
-  /* === Backgrounds === */
-  --bg-base: #06080c;
-  --bg-surface: #0c0e14;
-  --bg-elevated: #12151d;
-  --bg-overlay: #181c26;
-  --bg-input: #0a0c12;
+  --bg: #000000;
+  --surface: rgba(10, 10, 20, 0.7);
+  --surface-solid: rgba(10, 10, 20, 0.85);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
 
-  /* === Glass System (from Flashpoint) === */
-  --glass-bg: hsla(220, 20%, 8%, 0.88);
-  --glass-border: hsla(220, 20%, 100%, 0.06);
-  --glass-blur: 16px;
+  --text-1: rgba(255, 255, 255, 0.9);
+  --text-2: rgba(255, 255, 255, 0.5);
+  --text-3: rgba(255, 255, 255, 0.25);
 
-  /* === Foreground === */
-  --text-primary: #f0f0f2;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-  --text-muted: #4b5563;
+  --amber: #f59e0b;
+  --amber-glow: rgba(245, 158, 11, 0.15);
+  --amber-dim: rgba(245, 158, 11, 0.5);
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --red: #ef4444;
 
-  /* === Accent — Amber/Gold (mission control) === */
-  --accent: hsl(38, 90%, 55%);
-  --accent-hover: hsl(38, 90%, 62%);
-  --accent-subtle: hsla(38, 90%, 55%, 0.12);
-  --accent-border: hsla(38, 90%, 55%, 0.25);
-  --accent-glow-sm: 0 0 8px hsla(38, 90%, 55%, 0.3);
-  --accent-glow-md: 0 0 16px hsla(38, 90%, 55%, 0.25);
-  --accent-glow-lg: 0 0 32px hsla(38, 90%, 55%, 0.2);
+  --glass: rgba(10, 10, 20, 0.7);
+  --glass-blur: 12px;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-radius: 12px;
 
-  /* === Semantic === */
-  --success: #22c55e;
-  --success-subtle: hsla(142, 71%, 45%, 0.12);
-  --warning: #f59e0b;
-  --warning-subtle: hsla(38, 92%, 50%, 0.12);
-  --error: #ef4444;
-  --error-subtle: hsla(0, 84%, 60%, 0.12);
-  --info: #3b82f6;
-  --info-subtle: hsla(217, 91%, 60%, 0.12);
-
-  /* === Mission-specific === */
-  --color-nominal: #22c55e;
-  --color-caution: #f59e0b;
-  --color-critical: #ef4444;
-  --color-standby: #6b7280;
-  --color-trajectory: #3b82f6;
-  --color-lunar: #c4b5fd;
-
-  /* === Spacing (4px grid) === */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-
-  /* === Radius === */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 9999px;
-
-  /* === Shadows === */
-  --shadow-card: 0 1px 3px hsla(0, 0%, 0%, 0.4), 0 0 0 1px var(--glass-border);
-  --shadow-kpi: 0 4px 24px hsla(0, 0%, 0%, 0.5), 0 0 0 1px var(--glass-border);
-  --shadow-glow-accent: 0 0 20px hsla(38, 90%, 55%, 0.15);
-
-  /* === Motion === */
-  --duration-micro: 80ms;
-  --duration-fast: 150ms;
-  --duration-standard: 200ms;
-  --duration-moderate: 300ms;
-  --duration-slow: 500ms;
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* === Layout === */
-  --topbar-height: 56px;
-}
-
-/* ============================================================
-   Light Theme — independently designed, not inverted
-   Clean, paper-like surfaces with NASA blue accent
-   ============================================================ */
-[data-theme="light"] {
-  /* === Backgrounds === */
-  --bg-base: #f5f5f7;
-  --bg-surface: #ffffff;
-  --bg-elevated: #f0f0f2;
-  --bg-overlay: #e8e8ec;
-  --bg-input: #f5f5f7;
-
-  /* === Glass System === */
-  --glass-bg: hsla(0, 0%, 100%, 0.85);
-  --glass-border: hsla(220, 10%, 0%, 0.08);
-  --glass-blur: 16px;
-
-  /* === Foreground === */
-  --text-primary: #1a1a2e;
-  --text-secondary: #555568;
-  --text-tertiary: #8888a0;
-  --text-muted: #b0b0c0;
-
-  /* === Accent — Deep Navy/Amber for light === */
-  --accent: hsl(38, 85%, 42%);
-  --accent-hover: hsl(38, 85%, 35%);
-  --accent-subtle: hsla(38, 85%, 42%, 0.08);
-  --accent-border: hsla(38, 85%, 42%, 0.2);
-  --accent-glow-sm: 0 0 8px hsla(38, 85%, 42%, 0.15);
-  --accent-glow-md: 0 0 16px hsla(38, 85%, 42%, 0.1);
-  --accent-glow-lg: 0 0 32px hsla(38, 85%, 42%, 0.08);
-
-  /* === Semantic === */
-  --success: #16a34a;
-  --success-subtle: hsla(142, 71%, 35%, 0.08);
-  --warning: #d97706;
-  --warning-subtle: hsla(38, 92%, 44%, 0.08);
-  --error: #dc2626;
-  --error-subtle: hsla(0, 72%, 50%, 0.08);
-  --info: #2563eb;
-  --info-subtle: hsla(217, 91%, 53%, 0.08);
-
-  /* === Mission-specific === */
-  --color-nominal: #16a34a;
-  --color-caution: #d97706;
-  --color-critical: #dc2626;
-  --color-standby: #9ca3af;
-  --color-trajectory: #2563eb;
-  --color-lunar: #7c3aed;
-
-  /* === Shadows — light theme uses real elevation === */
-  --shadow-card: 0 1px 3px hsla(220, 20%, 0%, 0.06), 0 0 0 1px var(--glass-border);
-  --shadow-kpi: 0 2px 12px hsla(220, 20%, 0%, 0.08), 0 0 0 1px var(--glass-border);
-  --shadow-glow-accent: 0 0 20px hsla(38, 85%, 42%, 0.08);
+  --font-display: var(--font-instrument-serif);
+  --font-body: var(--font-dm-sans);
+  --font-mono: var(--font-dm-mono);
 }
 
 @theme inline {
-  --color-background: var(--bg-base);
-  --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--text-1);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
-/* === Base === */
+/* ─── Base ─────────────────────────────────────────────── */
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-1);
+}
+
 body {
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
 }
 
-/* === Glass Panel === */
-.glass-panel {
-  background: var(--glass-bg);
+/* ─── Glass Card ───────────────────────────────────────── */
+
+.glass-card {
+  background: var(--glass);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--glass-radius);
 }
 
-/* === Section Card === */
-.section-card {
-  background: var(--bg-surface);
+.glass-card-solid {
+  background: var(--surface-solid);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  border-radius: var(--glass-radius);
 }
 
-/* === KPI Card === */
-.kpi-card {
-  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-kpi);
-  transition: transform var(--duration-fast) var(--ease-out-expo),
-              box-shadow var(--duration-fast) var(--ease-out-expo);
-}
+/* ─── Data Typography ──────────────────────────────────── */
 
-.kpi-card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-kpi), var(--shadow-glow-accent);
-}
-
-/* === Data Text === */
-.data-value {
-  font-family: var(--font-geist-mono), monospace;
+.data-mono {
+  font-family: var(--font-mono), monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 
-.data-value-lg {
-  font-family: var(--font-geist-mono), monospace;
+.data-mono-lg {
+  font-family: var(--font-mono), monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
-  text-shadow: 0 0 30px hsla(38, 90%, 55%, 0.15);
 }
 
-/* === Status Dot === */
+/* ─── Status Indicator ─────────────────────────────────── */
+
 .status-dot {
   width: 8px;
   height: 8px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   flex-shrink: 0;
 }
 
-.status-dot--nominal {
-  background: var(--color-nominal);
-  box-shadow: 0 0 8px var(--color-nominal);
+.status-dot--active {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.status-dot--caution {
-  background: var(--color-caution);
-  box-shadow: 0 0 8px var(--color-caution);
-}
+/* ─── Scrollbar (only element that scrolls: mission feed) ─ */
 
-.status-dot--critical {
-  background: var(--color-critical);
-  box-shadow: 0 0 8px var(--color-critical);
-  animation: pulse-glow-critical 1s ease-in-out infinite;
-}
-
-/* === Gauge === */
-.gauge-track {
-  fill: none;
-  stroke: var(--bg-elevated);
-  stroke-linecap: round;
-}
-
-.gauge-fill {
-  fill: none;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1s var(--ease-out-expo);
-}
-
-/* === Scrollbar === */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-overlay);
-  border-radius: var(--radius-full);
+  background: var(--border);
+  border-radius: 9999px;
 }
 
-/* === Animations === */
+/* ─── Animations ───────────────────────────────────────── */
+
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.5; }
 }
 
-@keyframes pulse-glow-critical {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-@keyframes countdown-pulse {
-  0%, 100% { text-shadow: 0 0 30px hsla(38, 90%, 55%, 0.15); }
-  50% { text-shadow: 0 0 60px hsla(38, 90%, 55%, 0.3); }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes amber-flash {
+  0% { background: var(--amber-glow); }
+  100% { background: transparent; }
 }
 
 @keyframes shimmer {
@@ -289,78 +138,20 @@ body {
   100% { background-position: 200% 0; }
 }
 
-@keyframes orbit-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-@keyframes trajectory-draw {
-  from { stroke-dashoffset: 1000; }
-  to { stroke-dashoffset: 0; }
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up var(--duration-moderate) var(--ease-out-expo) both;
+  animation: fade-in-up 0.3s ease-out both;
 }
 
-.animate-countdown-pulse {
-  animation: countdown-pulse 2s ease-in-out infinite;
+.animate-amber-flash {
+  animation: amber-flash 1.5s ease-out both;
 }
 
 .animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--bg-elevated) 25%,
-    var(--bg-overlay) 50%,
-    var(--bg-elevated) 75%
-  );
+  background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
-}
-
-[data-theme="light"] .starfield {
-  display: none;
-}
-
-[data-theme="light"] .gauge-track {
-  stroke: var(--bg-overlay);
-}
-
-[data-theme="light"] .kpi-card {
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-kpi);
-}
-
-[data-theme="light"] .section-card {
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="light"] .glass-panel {
-  background: var(--glass-bg);
-  box-shadow: 0 1px 2px hsla(220, 20%, 0%, 0.04);
-}
-
-/* === Star Field Background === */
-.starfield {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(1px 1px at 10% 20%, hsla(0, 0%, 100%, 0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 65%, hsla(0, 0%, 100%, 0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 10%, hsla(0, 0%, 100%, 0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 40%, hsla(0, 0%, 100%, 0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 80%, hsla(0, 0%, 100%, 0.35) 0%, transparent 100%),
-    radial-gradient(1px 1px at 15% 85%, hsla(0, 0%, 100%, 0.25) 0%, transparent 100%),
-    radial-gradient(1px 1px at 45% 50%, hsla(0, 0%, 100%, 0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 65% 75%, hsla(0, 0%, 100%, 0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 80% 15%, hsla(0, 0%, 100%, 0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 25% 45%, hsla(0, 0%, 100%, 0.15) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 5% 55%, hsla(220, 60%, 80%, 0.3) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 55% 30%, hsla(220, 60%, 80%, 0.25) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 85% 60%, hsla(38, 60%, 70%, 0.2) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 35% 90%, hsla(38, 60%, 70%, 0.15) 0%, transparent 100%),
-    radial-gradient(2px 2px at 75% 5%, hsla(0, 0%, 100%, 0.5) 0%, transparent 100%);
 }
