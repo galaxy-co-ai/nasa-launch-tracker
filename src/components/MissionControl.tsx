@@ -963,9 +963,12 @@ export default function MissionControl() {
 
           {/* ── Center Column: Viz + Feed ────────────── */}
           <div className="flex flex-col gap-4">
-            {/* Tab bar */}
+            {/* Featured: Live Stream */}
+            <NasaTV />
+
+            {/* Tab bar for secondary views */}
             <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: "var(--bg-surface)" }}>
-              {(["trajectory", "eyes", "stream"] as const).map((tab) => (
+              {(["trajectory", "eyes"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setCenterTab(tab)}
@@ -976,15 +979,14 @@ export default function MissionControl() {
                     border: centerTab === tab ? "1px solid var(--glass-border)" : "1px solid transparent",
                   }}
                 >
-                  {tab === "trajectory" ? "Trajectory" : tab === "eyes" ? "3D View" : "Live Stream"}
+                  {tab === "trajectory" ? "Trajectory" : "3D View"}
                 </button>
               ))}
             </div>
 
-            {/* Active panel */}
+            {/* Secondary panel */}
             {centerTab === "trajectory" && <TrajectoryViz progress={trajectoryProgress} />}
             {centerTab === "eyes" && <NasaEyes />}
-            {centerTab === "stream" && <NasaTV />}
 
             {/* Status Feed */}
             <StatusFeed events={statusEvents} />
