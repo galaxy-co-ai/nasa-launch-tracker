@@ -32,7 +32,7 @@ function formatCountdown(ms: number): {
     hours: String(hours).padStart(2, "0"),
     minutes: String(minutes).padStart(2, "0"),
     seconds: String(seconds).padStart(2, "0"),
-    sign: ms <= 0 ? "T-" : "T+",
+    sign: ms > 0 ? "T-" : "T+",
   };
 }
 
@@ -40,13 +40,13 @@ function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-// ─── Arc Gauge SVG ────────────────────────────────────────
-function ArcGauge({
+// ─── Speedometer Gauge SVG ─────────────────────────────────
+function SpeedometerGauge({
   value,
   min,
   max,
   color,
-  size = 80,
+  size = 140,
 }: {
   value: number;
   min: number;
@@ -54,27 +54,93 @@ function ArcGauge({
   color: string;
   size?: number;
 }) {
-  const radius = (size - 8) / 2;
-  const circumference = Math.PI * radius; // half-circle
+  const cx = size / 2;
+  const cy = size / 2 + 8;
+  const radius = size / 2 - 16;
+  const startAngle = 225; // degrees (bottom-left)
+  const endAngle = -45; // degrees (bottom-right)
+  const sweep = 270; // total arc degrees
   const pct = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  const offset = circumference * (1 - pct);
+  const needleAngle = startAngle - pct * sweep;
+  const needleRad = (needleAngle * Math.PI) / 180;
+
+  // Arc path helper
+  const polarToCart = (angle: number, r: number) => ({
+    x: cx + r * Math.cos((angle * Math.PI) / 180),
+    y: cy - r * Math.sin((angle * Math.PI) / 180),
+  });
+
+  const arcStart = polarToCart(startAngle, radius);
+  const arcEnd = polarToCart(endAngle, radius);
+
+  // Tick marks
+  const ticks = [];
+  const numTicks = 10;
+  for (let i = 0; i <= numTicks; i++) {
+    const angle = startAngle - (i / numTicks) * sweep;
+    const inner = polarToCart(angle, radius - 8);
+    const outer = polarToCart(angle, radius);
+    const isMajor = i % 5 === 0;
+    ticks.push(
+      <line
+        key={i}
+        x1={inner.x}
+        y1={inner.y}
+        x2={outer.x}
+        y2={outer.y}
+        stroke={isMajor ? "var(--text-tertiary)" : "var(--bg-overlay)"}
+        strokeWidth={isMajor ? 2 : 1}
+        strokeLinecap="round"
+      />,
+    );
+  }
+
+  // Needle
+  const needleTip = {
+    x: cx + (radius - 12) * Math.cos(needleRad),
+    y: cy - (radius - 12) * Math.sin(needleRad),
+  };
+  const needleBase1 = {
+    x: cx + 4 * Math.cos(needleRad + Math.PI / 2),
+    y: cy - 4 * Math.sin(needleRad + Math.PI / 2),
+  };
+  const needleBase2 = {
+    x: cx + 4 * Math.cos(needleRad - Math.PI / 2),
+    y: cy - 4 * Math.sin(needleRad - Math.PI / 2),
+  };
 
   return (
-    <svg width={size} height={size / 2 + 4} viewBox={`0 0 ${size} ${size / 2 + 4}`}>
+    <svg width={size} height={size / 2 + 24} viewBox={`0 0 ${size} ${size / 2 + 24}`}>
+      {/* Track arc */}
       <path
-        d={`M 4 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 4} ${size / 2}`}
-        className="gauge-track"
+        d={`M ${arcStart.x} ${arcStart.y} A ${radius} ${radius} 0 1 1 ${arcEnd.x} ${arcEnd.y}`}
+        fill="none"
+        stroke="var(--bg-overlay)"
         strokeWidth={6}
+        strokeLinecap="round"
       />
+      {/* Active arc */}
       <path
-        d={`M 4 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 4} ${size / 2}`}
-        className="gauge-fill"
+        d={`M ${arcStart.x} ${arcStart.y} A ${radius} ${radius} 0 ${pct > 0.5 ? 1 : 0} 1 ${polarToCart(startAngle - pct * sweep, radius).x} ${polarToCart(startAngle - pct * sweep, radius).y}`}
+        fill="none"
         stroke={color}
         strokeWidth={6}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 8px ${color})`, transition: "d 1s cubic-bezier(0.16, 1, 0.3, 1)" }}
       />
+      {/* Ticks */}
+      {ticks}
+      {/* Needle */}
+      <polygon
+        points={`${needleTip.x},${needleTip.y} ${needleBase1.x},${needleBase1.y} ${needleBase2.x},${needleBase2.y}`}
+        fill={color}
+        style={{
+          filter: `drop-shadow(0 0 6px ${color})`,
+          transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      />
+      {/* Center cap */}
+      <circle cx={cx} cy={cy} r={6} fill="var(--bg-elevated)" stroke={color} strokeWidth={2} />
     </svg>
   );
 }
@@ -130,8 +196,8 @@ function TelemetryCard({
   const gaugeColor = isNominal ? "var(--color-nominal)" : "var(--color-caution)";
 
   return (
-    <div className="kpi-card flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+    <div className="kpi-card flex flex-col items-center gap-2">
+      <div className="flex items-center justify-between w-full">
         <span
           className="text-xs uppercase tracking-wider"
           style={{ color: "var(--text-secondary)" }}
@@ -146,6 +212,12 @@ function TelemetryCard({
           }}
         />
       </div>
+      <SpeedometerGauge
+        value={point.value}
+        min={point.min}
+        max={point.max}
+        color={gaugeColor}
+      />
       <div className="flex items-end gap-2">
         <span
           className="data-value-lg text-2xl font-bold"
@@ -160,13 +232,7 @@ function TelemetryCard({
           {point.unit}
         </span>
       </div>
-      <ArcGauge
-        value={point.value}
-        min={point.min}
-        max={point.max}
-        color={gaugeColor}
-      />
-      <Sparkline data={history} color={gaugeColor} />
+      <Sparkline data={history} color={gaugeColor} width={140} />
     </div>
   );
 }
