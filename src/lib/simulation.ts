@@ -19,12 +19,54 @@ export function getPhase(met: number): Phase {
   return "MISSION COMPLETE";
 }
 
-// ─── Trajectory Progress ─────────────────────────────────
+// ─── Trajectory Progress (non-linear, phase-accurate) ────
+//
+// Maps MET (seconds) to trajectory progress (0→1) such that
+// the spacecraft position on the 600-point path matches where
+// it ACTUALLY is at that time in the mission.
+//
+// Trajectory point allocation (from trajectory.ts):
+//   HEO:     0.00 → 0.12  (72 pts)   Time: 0 → ~24h (86,400s)
+//   TLI:     0.12 → 0.15  (18 pts)   Time: ~24h → ~25h
+//   Outbound: 0.15 → 0.45 (180 pts)  Time: ~25h → Day 5
+//   Flyby:   0.45 → 0.57  (72 pts)   Time: Day 5 → Day 6
+//   Return:  0.57 → 0.95  (228 pts)  Time: Day 6 → Day 10
+//   Entry:   0.95 → 1.00  (30 pts)   Time: Day 10 → splashdown
+
+interface PhaseMapping {
+  metStart: number;
+  metEnd: number;
+  progressStart: number;
+  progressEnd: number;
+}
+
+const PHASE_MAP: PhaseMapping[] = [
+  // HEO orbits: T0 to TLI (~25 hours = 90,000s)
+  { metStart: 0, metEnd: TIMELINE.tli, progressStart: 0, progressEnd: 0.12 },
+  // TLI burn: short but distinct
+  { metStart: TIMELINE.tli, metEnd: TIMELINE.tli + 360, progressStart: 0.12, progressEnd: 0.15 },
+  // Outbound coast: TLI+6min to lunar flyby (~4 days)
+  { metStart: TIMELINE.tli + 360, metEnd: TIMELINE.lunarFlyby, progressStart: 0.15, progressEnd: 0.45 },
+  // Lunar flyby: ~6 hours
+  { metStart: TIMELINE.lunarFlyby, metEnd: TIMELINE.freeReturn, progressStart: 0.45, progressEnd: 0.57 },
+  // Return coast: ~4 days
+  { metStart: TIMELINE.freeReturn, metEnd: TIMELINE.reentry, progressStart: 0.57, progressEnd: 0.95 },
+  // Entry + splashdown
+  { metStart: TIMELINE.reentry, metEnd: TIMELINE.splashdown, progressStart: 0.95, progressEnd: 1.0 },
+];
 
 export function getTrajectoryProgress(met: number): number {
   if (met <= 0) return 0;
   if (met >= TIMELINE.splashdown) return 1;
-  return met / TIMELINE.splashdown;
+
+  for (const phase of PHASE_MAP) {
+    if (met >= phase.metStart && met < phase.metEnd) {
+      const phaseProgress = (met - phase.metStart) / (phase.metEnd - phase.metStart);
+      return phase.progressStart + phaseProgress * (phase.progressEnd - phase.progressStart);
+    }
+  }
+
+  return met / TIMELINE.splashdown; // fallback
 }
 
 // ─── Full Simulation ─────────────────────────────────────
