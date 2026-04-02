@@ -9,8 +9,8 @@ import * as THREE from "three";
 interface CameraControllerProps {
   mode: CameraMode;
   orionPosition?: THREE.Vector3;
-  interactive?: boolean; // Allow user orbit controls
-  autoOrbit?: boolean; // Auto-rotate around target
+  interactive?: boolean;
+  autoOrbit?: boolean;
 }
 
 const MODES: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
@@ -30,60 +30,31 @@ export default function CameraController({
   const prevMode = useRef(mode);
   const autoOrbitAngle = useRef(0);
 
-  // Transition on mode change
+  // ONLY transition when mode actually CHANGES — never on every frame
   useEffect(() => {
     if (!controlsRef.current) return;
-    const controls = controlsRef.current as unknown as {
-      smoothTime: number;
-      setLookAt: (...args: number[]) => void;
-      enabled: boolean;
-    };
-
+    const controls = controlsRef.current;
     controls.smoothTime = 2.0;
 
     if (mode === "follow" && orionPosition) {
       controls.setLookAt(
         orionPosition.x - 10, orionPosition.y + 8, orionPosition.z - 10,
         orionPosition.x, orionPosition.y, orionPosition.z,
-        // @ts-expect-error — enableTransition param
         true,
       );
-    } else if (mode !== "follow" && MODES[mode]) {
+    } else if (MODES[mode]) {
       const { pos, target } = MODES[mode];
-      controls.setLookAt(
-        pos[0], pos[1], pos[2],
-        target[0], target[1], target[2],
-        // @ts-expect-error — enableTransition param
-        true,
-      );
+      controls.setLookAt(pos[0], pos[1], pos[2], target[0], target[1], target[2], true);
     }
 
     prevMode.current = mode;
-  }, [mode, orionPosition]);
+  }, [mode]); // Only fire on mode change, NOT on position change
 
-  // Follow mode continuous tracking + auto-orbit
+  // Auto-orbit only when explicitly requested (ZEN mode, mini scenes)
   useFrame((_, delta) => {
-    if (!controlsRef.current) return;
-    const controls = controlsRef.current as unknown as {
-      smoothTime: number;
-      setLookAt: (...args: number[]) => void;
-      azimuthAngle: number;
-    };
-
-    if (mode === "follow" && orionPosition) {
-      controls.smoothTime = 0.5;
-      controls.setLookAt(
-        orionPosition.x - 10, orionPosition.y + 8, orionPosition.z - 10,
-        orionPosition.x, orionPosition.y, orionPosition.z,
-        // @ts-expect-error — enableTransition param
-        true,
-      );
-    }
-
-    if (autoOrbit) {
-      autoOrbitAngle.current += delta * 0.1;
-      controls.azimuthAngle = autoOrbitAngle.current;
-    }
+    if (!controlsRef.current || !autoOrbit) return;
+    autoOrbitAngle.current += delta * 0.1;
+    controlsRef.current.azimuthAngle = autoOrbitAngle.current;
   });
 
   return (
@@ -92,7 +63,7 @@ export default function CameraController({
       makeDefault
       enabled={interactive}
       minDistance={5}
-      maxDistance={600}
+      maxDistance={800}
     />
   );
 }

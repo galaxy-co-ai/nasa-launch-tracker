@@ -79,38 +79,55 @@ export default function Orion({ position, tangent }: OrionProps) {
 
   return (
     <>
-      {/* Spacecraft compound model */}
+      {/* Orion MPCV — accurate proportions */}
       <group ref={groupRef} scale={0.4}>
-        {/* Command module (cone) */}
-        <mesh position={[0, 0, 1.2]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.7, 1.4, 16]} />
-          <meshStandardMaterial color="#c0c0c0" metalness={0.6} roughness={0.3} />
+        {/* Crew Module — 57.5° frustum (truncated cone), wider at base */}
+        <mesh position={[0, 0, 1.4]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.45, 0.9, 1.2, 20]} />
+          <meshStandardMaterial color="#d4d4d4" metalness={0.4} roughness={0.4} />
+        </mesh>
+        {/* Heat shield (flat bottom of CM) */}
+        <mesh position={[0, 0, 0.8]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.9, 0.9, 0.08, 20]} />
+          <meshStandardMaterial color="#3a3020" metalness={0.2} roughness={0.9} />
         </mesh>
 
-        {/* Service module (cylinder) */}
-        <mesh position={[0, 0, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.7, 0.7, 2.2, 16]} />
-          <meshStandardMaterial color="#8a8a8a" metalness={0.5} roughness={0.4} />
+        {/* Crew Module Adapter ring */}
+        <mesh position={[0, 0, 0.55]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.9, 0.85, 0.3, 20]} />
+          <meshStandardMaterial color="#c4a84a" metalness={0.3} roughness={0.5} />
         </mesh>
 
-        {/* Engine nozzle */}
-        <mesh position={[0, 0, -1.7]} rotation={[-Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.35, 0.5, 12]} />
-          <meshStandardMaterial color="#444" metalness={0.8} roughness={0.2} />
+        {/* European Service Module — cylinder, slightly narrower */}
+        <mesh position={[0, 0, -0.6]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.75, 0.75, 2.0, 20]} />
+          <meshStandardMaterial color="#c4a84a" metalness={0.3} roughness={0.5} />
         </mesh>
 
-        {/* Solar panels */}
-        <mesh position={[-2.8, 0, -0.2]}>
-          <boxGeometry args={[3.5, 0.04, 1.0]} />
-          <meshStandardMaterial color="#1a237e" metalness={0.3} roughness={0.7} />
+        {/* OMS engine nozzle (protruding from bottom) */}
+        <mesh position={[0, 0, -1.85]} rotation={[-Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.25, 0.5, 12]} />
+          <meshStandardMaterial color="#333" metalness={0.8} roughness={0.2} />
         </mesh>
-        <mesh position={[2.8, 0, -0.2]}>
-          <boxGeometry args={[3.5, 0.04, 1.0]} />
-          <meshStandardMaterial color="#1a237e" metalness={0.3} roughness={0.7} />
-        </mesh>
+
+        {/* 4 X-Wing Solar Arrays (Orion's distinctive feature) */}
+        {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, i) => (
+          <group key={i} rotation={[0, 0, angle]} position={[0, 0, -0.5]}>
+            {/* Array arm extends outward */}
+            <mesh position={[2.5, 0, 0]}>
+              <boxGeometry args={[4.0, 0.03, 0.7]} />
+              <meshStandardMaterial color="#0d1b4a" metalness={0.2} roughness={0.8} />
+            </mesh>
+            {/* Strut connecting to ESM */}
+            <mesh position={[0.4, 0, 0]} rotation={[0, 0, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.6, 6]} />
+              <meshStandardMaterial color="#888" />
+            </mesh>
+          </group>
+        ))}
 
         {/* Amber point light for visibility */}
-        <pointLight color="#ff8800" intensity={3} distance={20} decay={2} />
+        <pointLight color="#ff8800" intensity={3} distance={25} decay={2} />
       </group>
 
       {/* Particle trail */}
